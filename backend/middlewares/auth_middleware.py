@@ -1,51 +1,73 @@
 import jwt
-from functools import wraps
-from flask import request, jsonify
+import re
+from flask import request, jsonify, g
 from backend.repository.user_repository import UserRepository
-from backend.utils.response_helper import api_response
+from backend.utils.response.response_helper import api_response
 from backend.config import SECRET_KEY
 
 user_repository = UserRepository()
 
-def Authentication(required_role=None):
-    """ Middleware xác thực JWT Token và kiểm tra vai trò User. """
+# Các route public tĩnh (cố định)
+STATIC_PUBLIC_ROUTES = [
+    "/users/create",
+    "/auth/login",
+    "/auth/register",
+    "/auth/refresh",
+]
 
-    def decorator(f):
-        @wraps(f)  # Giữ nguyên metadata của hàm gốc
-        def wrapped(*args, **kwargs):
-            auth_header = request.headers.get("Authorization")
+# Các pattern route public động (bắt đầu bằng các prefix này)
+DYNAMIC_PUBLIC_PATTERNS = [
+    # r"^/user.*",                # Tất cả các route bắt đầu bằng /user
+    r"^/ca/\d+$",               # Route dạng /ca/<int:id>
+    r"^/ca/.*",                 # Tất cả route bắt đầu bằng /ca/
+    r"^/api/public.*"           # Các API public khác
+]
 
-            if not auth_header or not auth_header.startswith("Bearer "):
-                return api_response(status=False, message="Unauthorized", status_code=401)
+def is_public_route():
+    """Kiểm tra route hiện tại có nằm trong public route hay không."""
 
-            token = auth_header.split(" ")[1]
-            print(token)
+    # 1. Kiểm tra các route tĩnh
+    if request.path in STATIC_PUBLIC_ROUTES:
+        return True
 
-            try:
-                print("dsadsads")
-                decoded_jwt = jwt.decode(token, SECRET_KEY, algorithms=["HS512"])
-                print(decoded_jwt)
-                username = decoded_jwt.get("user_name")
-                print(username)
-                if not username:
-                    username = decoded_jwt.get("sub")
-                user = user_repository.get_user_by_username(username)
-                if not user:
-                    return api_response(status=False, message="Invalid token", status_code=401)
+    # 2. Kiểm tra các route động bằng regex
+    for pattern in DYNAMIC_PUBLIC_PATTERNS:
+        if re.match(pattern, request.path):
+            return True
 
-                if required_role and user.role != required_role:
-                    return api_response(status=False, message="Forbidden", status_code=403)
+    return False
 
-                request.user = user  # Lưu user vào request để sử dụng trong API
+def authenticate():
+    """Middleware xác thực JWT Token cho mọi request."""
+    if is_public_route():
+        return  # Bỏ qua xác thực cho route public
 
-            except jwt.ExpiredSignatureError:
-                return api_response(status=False, message="Token expired", status_code=401)
-            except jwt.InvalidTokenError:
-                return api_response(status=False, message="Invalid token", status_code=401)
-            except Exception:
-                return api_response(status=False, message="Authentication failed", status_code=401)
+    auth_header = request.headers.get("Authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        return api_response(status=False, message="Unauthorized", status_code=401)
 
-            return f(*args, **kwargs)
+    token = auth_header.split(" ")[1]
 
-        return wrapped  # Không cần đổi tên function để tránh lỗi Flask
-    return decorator
+    try:
+        decoded_jwt = jwt.decode(token, SECRET_KEY, algorithms=["HS512"])
+        username = decoded_jwt.get("user_name") or decoded_jwt.get("sub")
+
+        if not username:
+            return api_response(status=False, message="Invalid token", status_code=401)
+
+        user = user_repository.get_user_by_username(username)
+        if not user:
+            return api_response(status=False, message="Invalid token", status_code=401)
+
+        g.user = user  # Lưu thông tin user vào Flask's g để sử dụng trong API sau
+
+    except jwt.ExpiredSignatureError:
+        return api_response(status=False, message="Token expired", status_code=401)
+    except jwt.InvalidTokenError:
+        return api_response(status=False, message="Invalid token", status_code=401)
+    except Exception:
+        return api_response(status=False, message="Authentication failed", status_code=401)
+
+# Middleware toàn cục cho Flask
+def register_authentication(app):
+    app.before_request(authenticate)

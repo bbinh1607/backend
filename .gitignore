@@ -1,0 +1,21 @@
+# Python bytecode
+*.pyc
+*.pyo
+__pycache__/
+
+# Môi trường ảo
+venv/
+env/
+
+# Các tệp cấu hình IDE
+.vscode/
+.idea/
+
+# Tệp cache
+*.log
+*.sqlite3
+*.db
+
+# Các tệp hệ thống
+.DS_Store  # cho macOS
+Thumbs.db  # cho Windows

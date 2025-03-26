@@ -2,14 +2,20 @@ from sqlalchemy import select
 from backend.entities.user import Profile, User
 from backend import db
 from werkzeug.security import generate_password_hash
-
+from sqlalchemy.exc import NoResultFound
 
 class UserRepository:
     def get_user_by_username(self, username: str):
-        return db.session.scalars(select(User).where(User.username == username)).one()
+        try:
+            return db.session.query(User).filter_by(username=username).one_or_none()
+        except NoResultFound:
+            return None
     
     def get_user_by_id(self, id: int):
-        return db.session.scalars(select(User).where(User.id == id)).one()
+        try:
+            return db.session.query(User).filter_by(id=id).one_or_none()
+        except NoResultFound:
+            return None
     
     def create_user(self, username, password, email, country_id, birth_date, job):
         hashed_password = generate_password_hash(password)

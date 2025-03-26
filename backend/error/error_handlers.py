@@ -19,6 +19,7 @@ def handle_not_found(error):
         "details": str(error)
     }), 404
 
+
 @error_bp.app_errorhandler(BusinessError)
 def handle_business_error(error):
     """Xử lý lỗi business logic"""

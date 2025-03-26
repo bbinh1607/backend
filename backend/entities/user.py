@@ -1,5 +1,4 @@
 from backend import db
-from backend.entities.country import Country
 from sqlalchemy.orm import relationship
 from marshmallow_sqlalchemy import SQLAlchemySchema, SQLAlchemyAutoSchema, auto_field
 from backend.entities.refresh_token import RefreshToken
@@ -24,9 +23,8 @@ class User(db.Model):
     password = db.Column(db.Text, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     
-    country_id = db.Column(db.Integer, db.ForeignKey('country.id'), nullable=False)
+    country_id = db.Column(db.Integer, nullable=False)
     
-    country = relationship("Country")  # Sửa từ Country.__name__ thành "Country"
     profile = relationship("Profile", uselist=False, back_populates="user")
     refresh_tokens = db.relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
 

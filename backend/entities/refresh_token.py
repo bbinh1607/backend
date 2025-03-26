@@ -11,3 +11,7 @@ class RefreshToken(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     user = db.relationship("User", back_populates="refresh_tokens")
+
+    def is_expired(self):
+        """Kiểm tra xem Refresh Token đã hết hạn chưa."""
+        return datetime.utcnow() > self.expires_at

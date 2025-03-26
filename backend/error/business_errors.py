@@ -33,3 +33,39 @@ class UnauthorizedAction(BusinessError):
     """Lỗi khi user không có quyền thực hiện hành động này."""
     def __init__(self):
         super().__init__("You are not authorized to perform this action", 403)
+
+class ComponentNotFound(BusinessError):
+    """Lỗi khi component không tồn tại."""
+    def __init__(self):
+        super().__init__("Component not found", 404)
+
+class ComponentDetailNotFound(BusinessError):
+    """Lỗi khi component detail không tồn tại."""
+    def __init__(self):
+        super().__init__("Component detail not found", 404)
+
+class CategoryNotFound(BusinessError):
+    """Lỗi khi category không tồn tại."""
+    def __init__(self):
+        super().__init__("Category not found", 404)
+
+class DeviceNotFound(BusinessError):
+    """Lỗi khi device không tồn tại."""
+    def __init__(self):
+        super().__init__("Device not found", 404)
+
+class DeviceDetailNotFound(BusinessError):
+    """Lỗi khi device detail không tồn tại."""
+    def __init__(self):
+        super().__init__("Device detail not found", 404)
+
+class DeviceAlreadyExists(BusinessError):
+    """Lỗi khi device đã tồn tại."""
+    def __init__(self):
+        super().__init__("Device already exists", 409)
+
+class RefreshTokenNotFound(BusinessError):
+    """Lỗi khi refresh token không tồn tại."""
+    def __init__(self):
+        super().__init__("Refresh token not found", 404)
+
